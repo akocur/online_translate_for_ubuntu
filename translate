@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+text="$(xsel -o)"
+translate="$(wget -U "Mozilla/5.0" -qO - "http://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t&q=$(echo $text | sed "s/[\"'<>]//g")")"
+echo $translate > /tmp/translate_google_json
+i=0
+r="$(jq '.[0]['$i'][0]' /tmp/translate_google_json)"
+i=1
+r="${r%\"}"
+r="${r#\"}"
+t=$r
+while true; do
+    r="$(jq '.[0]['$i'][0]' /tmp/translate_google_json)"
+    if [[ $r = "null" ]]; then
+        break
+    fi
+    r="${r%\"}"
+    r="${r#\"}"
+    t+=$r
+    ((i++))
+done
+echo -e "Original text:"'\n'"$text"'\n' > /tmp/notitrans
+echo -e "Translation:"'\n'"$t" >> /tmp/notitrans
+zenity --text-info --title="Translation" --filename=/tmp/notitrans
